@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>社内共有メモ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; }
+
+    /* ログイン画面 */
+    #login-screen { display: flex; align-items: center; justify-content: center; height: 100vh; }
+    .login-card { background: #fff; border: 1px solid #e5e5e3; border-radius: 14px; padding: 2.5rem 2rem; text-align: center; width: 320px; }
+    .login-title { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: #888; margin-bottom: 2rem; }
+    .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px 16px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; color: #333; transition: background 0.15s; }
+    .google-btn:hover { background: #f5f5f3; }
+    .google-icon { width: 18px; height: 18px; }
+
+    /* アプリ画面 */
+    #app-screen { display: none; }
+    header { background: #fff; border-bottom: 1px solid #e5e5e3; padding: 0 1.5rem; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .app-title { font-size: 15px; font-weight: 500; }
+    .status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #666; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-name { font-size: 13px; color: #666; }
+    .logout-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: transparent; cursor: pointer; color: #666; }
+    .logout-btn:hover { background: #f5f5f3; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; gap: 0; height: calc(100vh - 52px); }
+    .sidebar { background: #fff; border-right: 1px solid #e5e5e3; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 12px 14px; border-bottom: 1px solid #e5e5e3; display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-label { font-size: 12px; font-weight: 500; color: #888; }
+    .new-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px; background: transparent; cursor: pointer; color: #333; }
+    .new-btn:hover { background: #f5f5f3; }
+    .note-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .note-item { padding: 9px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 3px; border: 1px solid transparent; }
+    .note-item:hover { background: #f5f5f3; }
+    .note-item.active { background: #eeedfe; border-color: #afa9ec; }
+    .note-item-title { font-size: 13px; font-weight: 500; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .note-item-meta { font-size: 11px; color: #999; margin-top: 2px; }
+    .editor { display: flex; flex-direction: column; padding: 1.5rem; }
+    .editor-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #bbb; font-size: 14px; }
+    .title-input { font-size: 20px; font-weight: 500; border: none; outline: none; background: transparent; color: #1a1a1a; padding: 0 0 12px 0; border-bottom: 1px solid #e5e5e3; width: 100%; }
+    .title-input::placeholder { color: #ccc; }
+    .body-input { flex: 1; font-size: 14px; line-height: 1.8; border: none; outline: none; background: transparent; color: #1a1a1a; resize: none; padding: 14px 0; font-family: inherit; width: 100%; }
+    .body-input::placeholder { color: #ccc; }
+    .editor-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #e5e5e3; }
+    .footer-meta { font-size: 12px; color: #aaa; }
+    .footer-btns { display: flex; gap: 8px; }
+    .btn { font-size: 13px; padding: 6px 14px; border-radius: 7px; cursor: pointer; border: 1px solid #ddd; background: transparent; color: #333; }
+    .btn:hover { background: #f5f5f3; }
+    .btn-primary { background: #534AB7; color: #fff; border-color: #534AB7; }
+    .btn-primary:hover { background: #3C3489; border-color: #3C3489; }
+    .btn-danger { color: #A32D2D; border-color: #f7c1c1; }
+    .btn-danger:hover { background: #fcebeb; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; }
+    @media (max-width: 600px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { height: 200px; border-right: none; border-bottom: 1px solid #e5e5e3; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-title">社内共有メモ</div>
+    <div class="login-sub">Googleアカウントでログインしてください</div>
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+        <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+      </svg>
+      Googleでログイン
+    </button>
+  </div>
+</div>
+
+<!-- アプリ画面 -->
+<div id="app-screen">
+  <header>
+    <div class="header-left">
+      <div class="app-title">社内共有メモ</div>
+      <div class="status"><div class="dot"></div><span>リアルタイム同期中</span></div>
+    </div>
+    <div class="user-info">
+      <span class="user-name" id="user-name"></span>
+      <button class="logout-btn" onclick="logout()">ログアウト</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-label">メモ一覧</span>
+        <button class="new-btn" onclick="newNote()">+ 新規</button>
+      </div>
+      <div class="note-list" id="note-list"></div>
+    </div>
+
+    <div class="editor">
+      <div class="editor-empty" id="empty-state">メモを選択するか、新規作成してください</div>
+      <div id="editor-content" style="display:none;flex-direction:column;flex:1;">
+        <input class="title-input" id="note-title" type="text" placeholder="タイトル" />
+        <textarea class="body-input" id="note-body" placeholder="内容を入力..."></textarea>
+        <div class="editor-footer">
+          <span class="footer-meta" id="note-meta"></span>
+          <div class="footer-btns">
+            <button class="btn btn-danger" onclick="deleteNote()">削除</button>
+            <button class="btn btn-primary" onclick="saveNote()">保存して共有</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB4KrnklXVwDfuVOjwg5TmwFlVXe6SjZ9M",
+    authDomain: "memo-app-41573.firebaseapp.com",
+    databaseURL: "https://memo-app-41573-default-rtdb.firebaseio.com",
+    projectId: "memo-app-41573",
+    storageBucket: "memo-app-41573.firebasestorage.app",
+    messagingSenderId: "1033206297284",
+    appId: "1:1033206297284:web:d76a5b2999141adf16cf91"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const provider = new GoogleAuthProvider();
+
+  let notes = [];
+  let currentId = null;
+  let currentUser = null;
+
+  window.loginWithGoogle = async function() {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch(e) {
+      alert('ログインに失敗しました: ' + e.message);
+    }
+  };
+
+  window.logout = async function() {
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('user-name').textContent = user.displayName || user.email;
+      startListening();
+    } else {
+      currentUser = null;
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app-screen').style.display = 'none';
+    }
+  });
+
+  function startListening() {
+    const notesRef = ref(db, 'notes');
+    onValue(notesRef, (snapshot) => {
+      const data = snapshot.val();
+      notes = data ? Object.values(data) : [];
+      render();
+      if (currentId) {
+        const n = notes.find(x => x.id === currentId);
+        if (n) document.getElementById('note-meta').textContent = `最終更新: ${n.author} · ${fmt(n.updatedAt)}`;
+      }
+    });
+  }
+
+  function fmt(iso) {
+    try {
+      return new Date(iso).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch(e) { return ''; }
+  }
+
+  function render() {
+    const list = document.getElementById('note-list');
+    list.innerHTML = '';
+    notes.slice().sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt)).forEach(n => {
+      const d = document.createElement('div');
+      d.className = 'note-item' + (currentId === n.id ? ' active' : '');
+      d.innerHTML = `<div class="note-item-title">${n.title || '(無題)'}</div><div class="note-item-meta">${n.author} · ${fmt(n.updatedAt)}</div>`;
+      d.onclick = () => loadNote(n.id);
+      list.appendChild(d);
+    });
+  }
+
+  function loadNote(id) {
+    currentId = id;
+    const n = notes.find(x => x.id === id);
+    if (!n) return;
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('editor-content').style.display = 'flex';
+    document.getElementById('note-title').value = n.title || '';
+    document.getElementById('note-body').value = n.body || '';
+    document.getElementById('note-meta').textContent = `最終更新: ${n.author} · ${fmt(n.updatedAt)}`;
+    render();
+  }
+
+  window.newNote = function() {
+    if (!currentUser) return;
+    const notesRef = ref(db, 'notes');
+    const newRef = push(notesRef);
+    const id = newRef.key;
+    set(newRef, { id, title: '新しいメモ', body: '', author: currentUser.displayName || currentUser.email, updatedAt: new Date().toISOString() });
+    currentId = id;
+  };
+
+  window.saveNote = function() {
+    if (!currentId || !currentUser) return;
+    const data = {
+      id: currentId,
+      title: document.getElementById('note-title').value,
+      body: document.getElementById('note-body').value,
+      author: currentUser.displayName || currentUser.email,
+      updatedAt: new Date().toISOString()
+    };
+    set(ref(db, 'notes/' + currentId), data);
+    showToast('保存しました');
+  };
+
+  window.deleteNote = function() {
+    if (!currentId) return;
+    if (!confirm('このメモを削除しますか？')) return;
+    remove(ref(db, 'notes/' + currentId));
+    currentId = null;
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('editor-content').style.display = 'none';
+  };
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+</script>
+</body>
+</html>
